@@ -1,14 +1,7 @@
 import express from 'express';
 import path from 'path';
-import morgan from 'morgan';
-import rfs from 'rotating-file-stream';
-import fs from 'fs';
-import cookieParser from 'cookie-parser';
-import bodyParser from 'body-parser';
-import AppRouter from './routes';
-import adapters from './config/logging';
 import config from './config/app';
-import { Logger } from '@nsilly/log';
+// import UserRepository from './app/Repositories/UserRepository';
 import { ExceptionHandler, Exception } from '@nsilly/exceptions';
 import { App } from '@nsilly/container';
 import { RequestParser } from '@nsilly/support';
@@ -16,12 +9,6 @@ import { RequestParser } from '@nsilly/support';
 require('dotenv').config();
 
 var app = express();
-/**
- * Parse request
- */
-app.use(bodyParser.json({ limit: '50mb' }));
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 /**
@@ -35,20 +22,16 @@ config.providers.map(provider => {
   }
 });
 
-App.make(Logger).setAdapters(adapters);
+// const getUser = () => {
+//   return new Promise(async resolve => {
+//     const users = await App.make(UserRepository).get();
+//     resolve(users);
+//   });
+// };
 
-/**
- * log all requests to /storages/logs/access.log
- */
-if (process.env.APP_ENABLE_ACCESS_LOG === 'true') {
-  var logDirectory = path.join(__dirname, 'storages', 'logs');
-  fs.existsSync(logDirectory) || fs.mkdirSync(logDirectory);
-  var accessLogStream = rfs('access.log', {
-    interval: '1d',
-    path: logDirectory
-  });
-  app.use(morgan('combined', { stream: accessLogStream }));
-}
+// getUser().then(function(data) {
+//   console.log(data);
+// });
 
 app.use(function(req, res, next) {
   const reqd = App.make(RequestParser).createFromRequest(req, res, next);
@@ -57,8 +40,6 @@ app.use(function(req, res, next) {
   reqd._req = req;
   reqd.run(next);
 });
-
-app.use(AppRouter);
 
 app.use(ExceptionHandler);
 
